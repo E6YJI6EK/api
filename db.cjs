@@ -289,8 +289,9 @@ app.post("/edit-password", authenticateToken, (req, res) => {
 });
 
 app.post("/create-workout", authenticateToken, (req, res) => {
-  const { userType, beginDatetime, endDatetime, disciplineId } = req.body;
-  if (userType == "coach") {
+  const { beginDatetime, endDatetime, disciplineId } = req.body;
+  const { user_type } = req.user;
+  if (user_type == "coach" || user_type == "admin") {
     db.query(
       `INSERT INTO workouts (begin_datetime, end_datetime, discipline_id) VALUES (?, ?, ?)`,
       [beginDatetime, endDatetime, disciplineId],
@@ -343,11 +344,11 @@ app.post("/create-discipline", authenticateToken, (req, res) => {
   }
 });
 
-app.post("/get-achievements", authenticateToken, (req, res) => {
-  const { userId } = req.body;
+app.get("/get-achievements", authenticateToken, (req, res) => {
+  const { id } = req.user;
   db.query(
     `SELECT * FROM achievements WHERE user_id = ?`,
-    [userId],
+    [id],
     (err, result) => {
       if (err) {
         res.send({ isSuccess: false, isFailure: true, message: `${err}` });
@@ -363,10 +364,11 @@ app.post("/get-achievements", authenticateToken, (req, res) => {
 });
 
 app.post("/create-achievement", authenticateToken, (req, res) => {
-  const { date, description, userId } = req.body;
+  const { date, description } = req.body;
+  const { id } = req.user;
   db.query(
     `INSERT INTO achievements (date, description, user_id) VALUES (?, ?, ?)`,
-    [date, description, userId],
+    [date, description, id],
     (err, result) => {
       if (err) {
         res.send({ isSuccess: false, isFailure: true, message: `${err}` });
@@ -413,7 +415,7 @@ app.get("/show-schedule", authenticateToken, (req, res) => {
   db.query(
     `
   SELECT
-    d.name,
+    d.name as d_name,
     w.begin_datetime,
     w.end_datetime,
     u.last_name,
